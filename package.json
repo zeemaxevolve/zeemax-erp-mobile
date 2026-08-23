@@ -1,0 +1,26 @@
+{
+  "name": "zeemax-erp-mobile",
+  "version": "1.0.0",
+  "description": "Zeemax ERP — Android app (Capacitor wrapper around the same React app used on desktop)",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.jsx --bundle --outfile=www/app.bundle.js --loader:.js=jsx --minify --target=es2019",
+    "build:dev": "esbuild src/index.jsx --bundle --outfile=www/app.bundle.js --loader:.js=jsx --sourcemap",
+    "sync": "npm run build && npx cap sync android",
+    "open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/share": "^8.0.1",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.0.1",
+    "lucide-react": "^1.33.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
