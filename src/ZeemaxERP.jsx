@@ -5,7 +5,7 @@ import {
   AlertTriangle, Search, Trash2, Pencil, ArrowRight, CheckCircle2,
   ChevronRight, Beaker, Receipt, ClipboardList, Wallet, TrendingUp,
   TrendingDown, BookOpen, Landmark, PackageCheck, Droplets, ShieldAlert,
-  Phone, Mail, MapPin, Globe, FlaskConical, MessageCircle,
+  Phone, Mail, MapPin, Globe, FlaskConical, MessageCircle, Menu,
 } from "lucide-react";
 
 /* ============================================================
@@ -816,8 +816,39 @@ function GlobalStyle() {
       .cfe .doc-viewer-scroll::-webkit-scrollbar-thumb { background: #C8C4B8; border-radius: 6px; border: 2px solid #fff; }
       .cfe .doc-viewer-scroll::-webkit-scrollbar-thumb:hover { background: #A9A392; }
       .cfe .doc-viewer-overlay { padding: 20px; align-items: center; }
+
+      /* ===== App shell: sidebar + hamburger drawer for phones/tablets ===== */
+      .cfe .sidebar-close-btn { display: none; background: none; border: none; padding: 4px; cursor: pointer; flex-shrink: 0; }
+      .cfe .mobile-menu-btn { display: none; align-items: center; gap: 10px; background: #fff; border: 1px solid ${TOKENS.line}; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; cursor: pointer; color: ${TOKENS.navy}; width: 100%; text-align: left; }
+      .cfe .sidebar-backdrop { display: none; }
+
+      @media (max-width: 900px) {
+        .cfe { display: block !important; border-radius: 0; border: none; min-height: 100vh; }
+        .cfe .app-sidebar {
+          position: fixed; inset: 0 auto 0 0; z-index: 60; height: 100vh;
+          transform: translateX(-100%); transition: transform .22s ease;
+          box-shadow: 8px 0 24px rgba(0,0,0,0.25); overflow-y: auto;
+        }
+        .cfe .app-sidebar.open { transform: translateX(0); }
+        .cfe .sidebar-close-btn { display: block; }
+        .cfe .mobile-menu-btn { display: flex; }
+        .cfe .sidebar-backdrop {
+          display: block; position: fixed; inset: 0; background: rgba(14,26,50,0.5); z-index: 55;
+        }
+        .cfe .app-main { padding: 14px !important; width: 100%; }
+      }
       @media (max-width: 900px) {
         .cfe .form-grid-3, .cfe .form-grid-4 { grid-template-columns: 1fr 1fr; }
+        .cfe .dashboard-kpi-grid { grid-template-columns: 1fr 1fr; }
+        .cfe .dashboard-content-grid { grid-template-columns: 1fr; }
+        .cfe .party-kpi-grid { grid-template-columns: 1fr 1fr; }
+        .cfe .reports-aging-grid { grid-template-columns: 1fr 1fr 1fr; }
+        .cfe .balance-sheet-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 480px) {
+        .cfe .dashboard-kpi-grid { grid-template-columns: 1fr; }
+        .cfe .party-kpi-grid { grid-template-columns: 1fr; }
+        .cfe .reports-aging-grid { grid-template-columns: 1fr 1fr; }
       }
       @media (max-width: 640px) {
         .cfe .modal-overlay { padding: 0; align-items: stretch; }
@@ -1289,7 +1320,7 @@ function Dashboard({ db, go }) {
           subtitle="This is a blank workspace — add your first product and customer to start raising Proforma Invoices, Invoices, and Waybills that flow straight into the books."
           action={<button className="btn btn-primary" onClick={() => go("products")}>Add your first product <ArrowRight size={14} /></button>} />
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginTop: hasData ? 0 : 18 }}>
+      <div className="dashboard-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginTop: hasData ? 0 : 18 }}>
         {kpis.map((k) => (
           <div key={k.label} className="card kpi">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1301,7 +1332,7 @@ function Dashboard({ db, go }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14, marginTop: 14 }}>
+      <div className="dashboard-content-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14, marginTop: 14 }}>
         <div className="card" style={{ padding: 18 }}>
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Recent Documents</div>
           {recentDocs.length === 0 ? (
@@ -1726,7 +1757,7 @@ function PartyDetail({ db, party, kind, onClose }) {
       </div>
 
       {isCustomer ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, margin: "14px 0" }}>
+        <div className="party-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, margin: "14px 0" }}>
           <div className="card kpi" style={{ padding: 12 }}>
             <div style={{ fontSize: 11, color: TOKENS.mute, fontWeight: 600 }}>Proforma Invoices</div>
             <div className="val" style={{ fontSize: 18 }}>{docs.filter((d) => d.type === "PROFORMA").length}</div>
@@ -2456,7 +2487,7 @@ function Accounting({ db }) {
       )}
 
       {tab === "bs" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760 }}>
+        <div className="balance-sheet-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760 }}>
           <div className="card" style={{ padding: 20 }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>Assets</div>
             <Row label="Cash & Bank" value={bs.cash} />
@@ -2498,7 +2529,7 @@ function Reports({ db }) {
   return (
     <div>
       <SectionHeader title="Reports" subtitle="Stock valuation and receivables aging." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 18 }}>
+      <div className="reports-aging-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 18 }}>
         {buckets.map((b, i) => (
           <div key={b} className="card kpi">
             <div style={{ fontSize: 11.5, color: TOKENS.mute, fontWeight: 600 }}>{b}</div>
@@ -2790,6 +2821,7 @@ export default function ZeemaxERP() {
   const [db, setDb] = useState(null);
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const saveTimer = useRef(null);
   const dbLoadedRef = useRef(false);
 
@@ -2870,21 +2902,30 @@ export default function ZeemaxERP() {
   const taglineLabel = db.settings.tagline || "Solutions that Evolve, Results that Last.";
 
   return (
-    <div className="cfe" style={{ display: "flex", minHeight: 640, borderRadius: 12, overflow: "hidden", border: `1px solid ${TOKENS.line}` }}>
+    <div className="cfe" style={{ display: "flex", minHeight: 640, borderRadius: 12, overflow: "hidden", border: `1px solid ${TOKENS.line}`, position: "relative" }}>
       <GlobalStyle />
-      <div className="no-print" style={{ width: 226, background: `linear-gradient(180deg, ${TOKENS.navy}, ${TOKENS.navyDeep})`, padding: "18px 12px", display: "flex", flexDirection: "column" }}>
+
+      {/* Backdrop — only rendered (and only intercepts clicks) while the
+          mobile drawer is open; tapping it closes the sidebar, same as
+          tapping outside any other overlay in the app. */}
+      {mobileNavOpen && (
+        <div className="no-print sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />
+      )}
+
+      <div className={"no-print app-sidebar" + (mobileNavOpen ? " open" : "")} style={{ width: 226, background: `linear-gradient(180deg, ${TOKENS.navy}, ${TOKENS.navyDeep})`, padding: "18px 12px", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 8px 18px" }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${TOKENS.brand}, ${TOKENS.teal})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             {db.settings.logo ? <img src={db.settings.logo} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} /> : <FlaskConical size={17} color="#fff" />}
           </div>
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: "#fff", fontWeight: 700, fontSize: 13.5, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{companyLabel}</div>
             <div style={{ color: "#8FE0AE", fontSize: 9.5, fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{taglineLabel}</div>
           </div>
+          <button className="sidebar-close-btn" onClick={() => setMobileNavOpen(false)} aria-label="Close menu"><X size={18} color="#fff" /></button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
           {NAV.map((n) => (
-            <div key={n.key} className={"navitem" + (tab === n.key ? " active" : "")} onClick={() => setTab(n.key)}>
+            <div key={n.key} className={"navitem" + (tab === n.key ? " active" : "")} onClick={() => { setTab(n.key); setMobileNavOpen(false); }}>
               <n.icon size={15} /> {n.label}
             </div>
           ))}
@@ -2898,7 +2939,10 @@ export default function ZeemaxERP() {
         </div>
       </div>
 
-      <div style={{ flex: 1, background: TOKENS.paper, padding: 24, overflowY: "auto" }}>
+      <div className="app-main" style={{ flex: 1, background: TOKENS.paper, padding: 24, overflowY: "auto", minWidth: 0 }}>
+        <button className="no-print mobile-menu-btn" onClick={() => setMobileNavOpen(true)} aria-label="Open menu">
+          <Menu size={18} /> <span style={{ fontWeight: 700, fontSize: 13.5 }}>{companyLabel}</span>
+        </button>
         {tab === "dashboard" && <Dashboard db={db} go={setTab} />}
         {tab === "products" && <Products db={db} mutate={mutate} go={setTab} />}
         {tab === "inventory" && <Inventory db={db} mutate={mutate} notify={notify} />}
