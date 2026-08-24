@@ -2297,12 +2297,16 @@ function Sales({ db, mutate, notify }) {
   const downloadOrSharePDF = async (doc) => {
     const node = document.querySelector(".print-doc");
     if (!node) return;
+    if (isMobilePlatform && typeof window.zeemaxNative?.sharePDF !== "function") {
+      notify("Share as PDF isn't available yet on this build — the app needs updating with the latest native bridge.", "error");
+      return;
+    }
     setPdfBusy(true);
     try {
       const pdf = await generateDocumentPDF(node);
       const safeNumber = (doc.number || "document").replace(/[^A-Za-z0-9-_]/g, "_");
       const filename = `${doc.type}-${safeNumber}.pdf`;
-      if (isMobilePlatform && typeof window.zeemaxNative.sharePDF === "function") {
+      if (isMobilePlatform) {
         const base64 = stripDataUriPrefix(pdf.output("datauristring"));
         await window.zeemaxNative.sharePDF(base64, filename);
       } else {
