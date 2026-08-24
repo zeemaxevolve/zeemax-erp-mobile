@@ -35,6 +35,10 @@ jobs:
       - name: Sync the bundle into the Android project
         run: npx cap sync android
 
+      - name:  Make gradlew executable 
+        working-directory: android 
+        run: chmod +x ./gradlew
+
       - name: Build the debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
