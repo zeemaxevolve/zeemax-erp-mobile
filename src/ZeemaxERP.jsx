@@ -863,6 +863,8 @@ function GlobalStyle() {
         .cfe .doc-header-row > div:last-child { text-align: left !important; width: 100%; }
         .cfe .doc-header-row table { width: 100%; }
         .cfe .doc-two-col { flex-direction: column !important; gap: 14px !important; }
+        .cfe .section-header { flex-direction: column; align-items: stretch !important; gap: 10px; }
+        .cfe .section-header .btn { padding: 6px 12px; font-size: 12.5px; align-self: flex-start; }
       }
       .cfe .hazard-tag { background: repeating-linear-gradient(45deg, ${TOKENS.amber}, ${TOKENS.amber} 6px, #241705 6px, #241705 7px); height: 3px; width: 100%; border-radius: 2px; opacity: .85; }
       @media print {
@@ -1338,6 +1340,7 @@ function Dashboard({ db, go }) {
           {recentDocs.length === 0 ? (
             <div style={{ color: TOKENS.mute, fontSize: 13 }}>No sales documents yet.</div>
           ) : (
+            <div className="table-scroll">
             <table>
               <thead><tr><th>Type</th><th>Number</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
               <tbody>
@@ -1352,6 +1355,7 @@ function Dashboard({ db, go }) {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         <div className="card" style={{ padding: 18 }}>
@@ -1390,6 +1394,7 @@ function Dashboard({ db, go }) {
         {db.products.length === 0 ? (
           <div style={{ color: TOKENS.mute, fontSize: 13 }}>No products yet — remaining quantities will appear here once you add products and receive stock.</div>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Product</th><th style={{ textAlign: "right" }}>Remaining Qty</th><th style={{ textAlign: "right" }}>Reorder Level</th><th style={{ textAlign: "right" }}>Stock Value</th></tr></thead>
             <tbody>
@@ -1407,6 +1412,7 @@ function Dashboard({ db, go }) {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -1415,8 +1421,8 @@ function Dashboard({ db, go }) {
 
 function SectionHeader({ title, subtitle, action }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
-      <div>
+    <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
+      <div style={{ minWidth: 0 }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{title}</h2>
         {subtitle && <div style={{ color: TOKENS.mute, fontSize: 13, marginTop: 3 }}>{subtitle}</div>}
       </div>
@@ -1561,6 +1567,7 @@ function Products({ db, mutate, go }) {
           action={<button className="btn btn-primary" onClick={() => setModal({})}>Add Product</button>} />
       ) : (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Product</th><th>Brand</th><th>CAS No.</th><th>Hazard Class</th><th>UOM</th><th style={{ textAlign: "right" }}>In Stock</th><th style={{ textAlign: "right" }}>Avg. Cost</th><th></th></tr></thead>
             <tbody>
@@ -1585,6 +1592,7 @@ function Products({ db, mutate, go }) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
       {modal !== null && <ProductForm db={db} initial={modal.id ? modal : null} onClose={() => setModal(null)} onSave={save} go={go} />}
@@ -1682,6 +1690,7 @@ function Inventory({ db, mutate, notify }) {
           action={<button className="btn btn-primary" onClick={() => setModal("receive")}>Post Goods Receipt</button>} />
       ) : (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Product</th><th>Batch / Lot</th><th>Warehouse</th><th style={{ textAlign: "right" }}>Qty</th><th style={{ textAlign: "right" }}>Unit Cost</th><th>Mfg Date</th><th>Expiry</th></tr></thead>
             <tbody>
@@ -1703,6 +1712,7 @@ function Inventory({ db, mutate, notify }) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
       {modal === "receive" && <ReceiptForm db={db} onClose={() => setModal(null)} onSave={doReceive} />}
@@ -1792,6 +1802,7 @@ function PartyDetail({ db, party, kind, onClose }) {
       {docs.length === 0 ? (
         <div style={{ color: TOKENS.mute, fontSize: 13 }}>No Proforma Invoices, Invoices, Waybills, or Receipts recorded for {party.name} yet.</div>
       ) : (
+        <div className="table-scroll">
         <table>
           <thead><tr><th>Type</th><th>Number</th><th>Date</th><th style={{ textAlign: "right" }}>Amount</th><th>Status</th></tr></thead>
           <tbody>
@@ -1806,6 +1817,7 @@ function PartyDetail({ db, party, kind, onClose }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </Modal>
   );
@@ -1843,6 +1855,7 @@ function PartyList({ db, mutate, kind }) {
           action={<button className="btn btn-primary" onClick={() => setModal({})}>Add {label}</button>} />
       ) : (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>City / State</th>{kind === "customers" && <th style={{ textAlign: "right" }}>Credit Limit</th>}<th style={{ textAlign: "right" }}>Transactions</th><th></th></tr></thead>
             <tbody>
@@ -1863,6 +1876,7 @@ function PartyList({ db, mutate, kind }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
       {modal !== null && <PartyForm title={(modal.id ? "Edit " : "Add ") + label} initial={modal.id ? modal : null} showCredit={kind === "customers"} onClose={() => setModal(null)} onSave={save} />}
@@ -2313,6 +2327,7 @@ function Sales({ db, mutate, notify }) {
           subtitle={tab === "PROFORMA" ? "Create a Proforma Invoice to quote a customer — it has no accounting effect until converted." : tab === "INVOICE" ? "Convert an approved Proforma Invoice to raise an Invoice." : tab === "WAYBILL" ? "Generate a Waybill from a dispatched Invoice." : "A Receipt is generated automatically every time you record a customer payment on an Invoice."} />
       ) : (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -2362,6 +2377,7 @@ function Sales({ db, mutate, notify }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -2455,6 +2471,7 @@ function Accounting({ db }) {
 
       {tab === "ledger" && (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Code</th><th>Account</th><th style={{ textAlign: "right" }}>Debit</th><th style={{ textAlign: "right" }}>Credit</th></tr></thead>
             <tbody>
@@ -2472,6 +2489,7 @@ function Accounting({ db }) {
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -2541,6 +2559,7 @@ function Reports({ db }) {
       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Stock Valuation</div>
       {db.products.filter((p) => !p._deleted).length === 0 ? <EmptyState icon={Boxes} title="No products yet" subtitle="Add products to see stock valuation here." /> : (
         <div className="card" style={{ marginBottom: 20 }}>
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Product</th><th style={{ textAlign: "right" }}>Qty on Hand</th><th style={{ textAlign: "right" }}>Avg. Cost</th><th style={{ textAlign: "right" }}>Value</th></tr></thead>
             <tbody>
@@ -2555,12 +2574,14 @@ function Reports({ db }) {
               <tr style={{ fontWeight: 700 }}><td colSpan={3}>Total Stock Value</td><td className="mono" style={{ textAlign: "right" }}>{fmtMoney(totalStockValue(db))}</td></tr>
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Accounts Receivable Aging</div>
       {aging.length === 0 ? <EmptyState icon={Receipt} title="No outstanding invoices" subtitle="Unpaid or partially paid invoices will be aged here by days overdue." /> : (
         <div className="card">
+          <div className="table-scroll">
           <table>
             <thead><tr><th>Invoice</th><th>Customer</th><th>Due Date</th><th style={{ textAlign: "right" }}>Balance</th><th>Bucket</th></tr></thead>
             <tbody>
@@ -2575,6 +2596,7 @@ function Reports({ db }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
