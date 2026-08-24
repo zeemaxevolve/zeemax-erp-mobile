@@ -1111,7 +1111,8 @@ function DocumentView({ db, doc, customer }) {
               editable Company Name/branding setting. The trading name next
               to the logo can change with rebrands; this stays constant,
               as printed on the company's registration/board letterhead. */}
-          <div style={{ fontSize: 14, fontWeight: 800, color: themeColor, letterSpacing: ".01em", marginBottom: 4 }}>ZEEMAX EVOLVE LTD.</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: themeColor, letterSpacing: ".01em", marginBottom: 2 }}>ZEEMAX EVOLVE LTD.</div>
+          <div style={{ fontSize: 9.5, color: TOKENS.mute, fontStyle: "italic", marginBottom: 4 }}>Chemicals Supplier, General Merchandise and General Contractors</div>
           <ContactLine icon={MapPin}>{s.address1 || "[Company Address]"}{s.address2 ? `, ${s.address2}` : ""}</ContactLine>
           <ContactLine icon={Phone}>{s.phone || "[Company Phone]"}</ContactLine>
           <ContactLine icon={Mail}>{s.email || "[company@email.com]"}</ContactLine>
