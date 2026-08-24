@@ -883,6 +883,8 @@ function GlobalStyle() {
       .cfe .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
       .cfe .form-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
       .cfe .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .cfe .tab-bar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .cfe .tab-bar-scroll::-webkit-scrollbar { display: none; }
       .cfe .doc-viewer-scroll { scrollbar-width: thin; scrollbar-color: #C8C4B8 transparent; }
       .cfe .doc-viewer-scroll::-webkit-scrollbar { width: 10px; }
       .cfe .doc-viewer-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -2416,17 +2418,19 @@ function Sales({ db, mutate, notify }) {
           null
         } />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, borderBottom: `1px solid ${TOKENS.line}` }}>
-        {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            style={{
-              background: "none", border: "none", padding: "8px 4px", marginRight: 18, fontSize: 13.5, fontWeight: 600,
-              color: tab === t.key ? TOKENS.navy : TOKENS.mute, borderBottom: tab === t.key ? `2px solid ${TOKENS.brand}` : "2px solid transparent",
-              display: "flex", alignItems: "center", gap: 6,
-            }}>
-            <t.icon size={14} /> {t.label} <span style={{ color: TOKENS.mute, fontWeight: 400 }}>({db.documents.filter(d => d.type === t.key && !d._deleted).length})</span>
-          </button>
-        ))}
+      <div className="tab-bar-scroll">
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, borderBottom: `1px solid ${TOKENS.line}`, width: "max-content", minWidth: "100%" }}>
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{
+                background: "none", border: "none", padding: "8px 4px", marginRight: 18, fontSize: 13.5, fontWeight: 600,
+                color: tab === t.key ? TOKENS.navy : TOKENS.mute, borderBottom: tab === t.key ? `2px solid ${TOKENS.brand}` : "2px solid transparent",
+                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0,
+              }}>
+              <t.icon size={14} /> {t.label} <span style={{ color: TOKENS.mute, fontWeight: 400 }}>({db.documents.filter(d => d.type === t.key && !d._deleted).length})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {docs.length === 0 ? (
@@ -2546,13 +2550,15 @@ function Accounting({ db }) {
   return (
     <div>
       <SectionHeader title="Accounting" subtitle="Every inventory and sales event above posts here automatically — nothing is entered twice." />
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, borderBottom: `1px solid ${TOKENS.line}` }}>
-        {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            style={{ background: "none", border: "none", padding: "8px 4px", marginRight: 18, fontSize: 13.5, fontWeight: 600, color: tab === t.key ? TOKENS.navy : TOKENS.mute, borderBottom: tab === t.key ? `2px solid ${TOKENS.brand}` : "2px solid transparent", display: "flex", alignItems: "center", gap: 6 }}>
-            <t.icon size={14} /> {t.label}
-          </button>
-        ))}
+      <div className="tab-bar-scroll">
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, borderBottom: `1px solid ${TOKENS.line}`, width: "max-content", minWidth: "100%" }}>
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{ background: "none", border: "none", padding: "8px 4px", marginRight: 18, fontSize: 13.5, fontWeight: 600, color: tab === t.key ? TOKENS.navy : TOKENS.mute, borderBottom: tab === t.key ? `2px solid ${TOKENS.brand}` : "2px solid transparent", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
+              <t.icon size={14} /> {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === "journal" && (
