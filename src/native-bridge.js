@@ -37,10 +37,6 @@ function pickJSONFile() {
       reader.onerror = () => resolve({ canceled: false, error: "Could not read that file." });
       reader.readAsText(file);
     };
-    // If the person backs out of the picker with no selection, most
-    // browsers/webviews don't fire a cancel event reliably — this is a
-    // known platform limitation, not something worth working around with
-    // fragile focus-tracking hacks.
     document.body.appendChild(input);
     input.click();
   });
@@ -105,13 +101,24 @@ export function installMobileNativeBridge() {
       if (typeof parsed !== "object" || parsed === null || !("zeemax_db" in parsed || "chemflow_db" in parsed)) {
         return { canceled: false, error: "That file doesn't contain recognizable Zeemax ERP data." };
       }
-      // Safety copy of current data before overwriting, same principle as desktop
       try {
         const current = await Filesystem.readFile({ path: STORE_FILE, directory: Directory.Data, encoding: Encoding.UTF8 });
         await Filesystem.writeFile({ path: `${STORE_FILE}.before-import-${Date.now()}.bak`, directory: Directory.Data, data: current.data, encoding: Encoding.UTF8 });
       } catch { /* nothing to back up on a brand new install */ }
       await Filesystem.writeFile({ path: STORE_FILE, directory: Directory.Data, data: picked.text, encoding: Encoding.UTF8 });
       return { canceled: false, restoredFrom: picked.name };
+    },
+
+    async sharePDF(base64Data, fileName) {
+      await Filesystem.writeFile({ path: fileName, directory: Directory.Cache, data: base64Data });
+      const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
+      await Share.share({
+        title: fileName,
+        text: `${fileName.replace(/\.pdf$/i, "")} — from Zeemax ERP`,
+        url: uri,
+        dialogTitle: "Share this document",
+      });
+      return { canceled: false, filePath: fileName };
     },
 
     platform: "android",
