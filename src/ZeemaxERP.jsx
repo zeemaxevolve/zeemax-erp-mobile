@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import {
   LayoutDashboard, Package, Boxes, Users, Truck, FileText, FileCheck2,
   Calculator, BarChart3, Settings as SettingsIcon, Plus, X, Printer,
   AlertTriangle, Search, Trash2, Pencil, ArrowRight, CheckCircle2,
   ChevronRight, Beaker, Receipt, ClipboardList, Wallet, TrendingUp,
   TrendingDown, BookOpen, Landmark, PackageCheck, Droplets, ShieldAlert,
-  Phone, Mail, MapPin, Globe, FlaskConical, MessageCircle, Menu,
+  Phone, Mail, MapPin, Globe, FlaskConical, MessageCircle, Menu, Download,
 } from "lucide-react";
 
 /* ============================================================
@@ -204,6 +206,43 @@ function addDays(iso, days) {
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+/** Renders a DOM node (the printed document view) into a real PDF file,
+ *  using html2canvas + jsPDF — pure JS/DOM, so this works identically on
+ *  desktop (Electron) and mobile (Capacitor's WebView), unlike
+ *  window.print(), which has no native print pipeline on Android and
+ *  silently does nothing there. Splits across multiple A4 pages if the
+ *  document is taller than one page. Returns the jsPDF instance so the
+ *  caller decides what to do with it (save directly on desktop, or turn
+ *  into base64 for a native mobile share sheet). */
+async function generateDocumentPDF(node) {
+  const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgWidth = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  let heightLeft = imgHeight;
+  let position = 0;
+  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+  return pdf;
+}
+
+/** data:application/pdf;base64,XXXX -> just "XXXX" — Capacitor's
+ *  Filesystem.writeFile wants the raw base64 payload, not the data URI. */
+function stripDataUriPrefix(dataUri) {
+  const idx = dataUri.indexOf(",");
+  return idx === -1 ? dataUri : dataUri.slice(idx + 1);
+}
+
 function fmtDate(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -2173,6 +2212,7 @@ function Sales({ db, mutate, notify }) {
   const [tab, setTab] = useState("PROFORMA");
   const [modal, setModal] = useState(null);
   const [viewDoc, setViewDoc] = useState(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const docs = db.documents.filter((d) => d.type === tab && !d._deleted).sort((a, b) => (b.number || "").localeCompare(a.number || ""));
   const custName = (id) => db.customers.find((c) => c.id === id)?.name || "—";
@@ -2219,6 +2259,8 @@ function Sales({ db, mutate, notify }) {
     }
   };
 
+  const isMobilePlatform = typeof window !== "undefined" && window.zeemaxNative?.platform === "android";
+
   const shareToWhatsApp = (doc) => {
     const customer = db.customers.find((c) => c.id === doc.customer_id);
     const parts = [
@@ -2236,7 +2278,6 @@ function Sales({ db, mutate, notify }) {
       parts.push(`Total: NGN ${fmtMoney(doc.total)}`);
       if (doc.type === "INVOICE") parts.push(`Balance Due: NGN ${fmtMoney(doc.total - (doc.amount_paid || 0))}`);
     }
-    parts.push("", "(Use Print > Save as PDF in this app to attach the full document.)");
     const text = parts.filter(Boolean).join("\n");
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     if (window.zeemaxNative && typeof window.zeemaxNative.openExternal === "function") {
@@ -2244,6 +2285,33 @@ function Sales({ db, mutate, notify }) {
     } else {
       window.open(url, "_blank");
     }
+  };
+
+  /** Real PDF generation — actually attaches the formatted document, not
+   *  just a text summary. On desktop this saves a .pdf file directly
+   *  (jsPDF's built-in browser download). On mobile — where window.print()
+   *  doesn't work at all, since Android's WebView has no print pipeline —
+   *  this is the ONLY way to get a real copy of the document out of the
+   *  app, so it hands the generated PDF to the native Share sheet instead,
+   *  with WhatsApp, email, Drive, etc. all available as targets for it. */
+  const downloadOrSharePDF = async (doc) => {
+    const node = document.querySelector(".print-doc");
+    if (!node) return;
+    setPdfBusy(true);
+    try {
+      const pdf = await generateDocumentPDF(node);
+      const safeNumber = (doc.number || "document").replace(/[^A-Za-z0-9-_]/g, "_");
+      const filename = `${doc.type}-${safeNumber}.pdf`;
+      if (isMobilePlatform && typeof window.zeemaxNative.sharePDF === "function") {
+        const base64 = stripDataUriPrefix(pdf.output("datauristring"));
+        await window.zeemaxNative.sharePDF(base64, filename);
+      } else {
+        pdf.save(filename);
+      }
+    } catch (e) {
+      notify("Could not generate the PDF: " + e.message, "error");
+    }
+    setPdfBusy(false);
   };
 
   const saveInvoiceEdit = (invoiceId, meta) => {
@@ -2392,9 +2460,14 @@ function Sales({ db, mutate, notify }) {
       {viewDoc && (
         <div className="modal-overlay doc-viewer-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setViewDoc(null); }}>
           <div className="modal-box doc-viewer-box" style={{ maxWidth: 780, display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
-            <div className="no-print" style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${TOKENS.line}`, flexShrink: 0 }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-primary btn-sm" onClick={() => window.print()}><Printer size={13} /> Print</button>
+            <div className="no-print doc-viewer-toolbar" style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${TOKENS.line}`, flexShrink: 0, flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!isMobilePlatform && (
+                  <button className="btn btn-primary btn-sm" onClick={() => window.print()}><Printer size={13} /> Print</button>
+                )}
+                <button className="btn btn-primary btn-sm" disabled={pdfBusy} onClick={() => downloadOrSharePDF(viewDoc)}>
+                  <Download size={13} /> {pdfBusy ? "Generating…" : isMobilePlatform ? "Share as PDF" : "Download PDF"}
+                </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => shareToWhatsApp(viewDoc)}><MessageCircle size={13} /> Share via WhatsApp</button>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setViewDoc(null)}><X size={14} /></button>
