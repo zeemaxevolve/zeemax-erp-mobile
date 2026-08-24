@@ -211,12 +211,46 @@ function addDays(iso, days) {
  *  using html2canvas + jsPDF — pure JS/DOM, so this works identically on
  *  desktop (Electron) and mobile (Capacitor's WebView), unlike
  *  window.print(), which has no native print pipeline on Android and
- *  silently does nothing there. Splits across multiple A4 pages if the
- *  document is taller than one page. Returns the jsPDF instance so the
- *  caller decides what to do with it (save directly on desktop, or turn
- *  into base64 for a native mobile share sheet). */
+ *  silently does nothing there.
+ *
+ *  IMPORTANT: this does NOT snapshot the node as currently displayed on
+ *  screen. On a narrow phone, the item table sits inside a horizontally
+ *  scrollable box (so the rest of the page doesn't scroll sideways with
+ *  it — see .table-scroll) — capturing that as-is would only grab
+ *  whatever columns happen to be scrolled into view, silently cutting
+ *  off the rest (exactly what happened before this fix: Description and
+ *  Qty were missing because they were scrolled out of view on the
+ *  phone's screen). Instead, this clones the node into an off-screen
+ *  container at a fixed, desktop-equivalent width with all internal
+ *  scroll clipping removed, so every column always renders in full and
+ *  the PDF looks identical regardless of which device generated it.
+ *  Splits across multiple A4 pages if the document is taller than one
+ *  page. Returns the jsPDF instance so the caller decides what to do
+ *  with it (save directly on desktop, or turn into base64 for a native
+ *  mobile share sheet). */
 async function generateDocumentPDF(node) {
-  const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+  const PDF_RENDER_WIDTH = 780; // matches the desktop document viewer's width
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll(".table-scroll").forEach((el) => {
+    el.style.overflow = "visible";
+    el.style.width = "auto";
+  });
+  const offscreen = document.createElement("div");
+  offscreen.style.position = "fixed";
+  offscreen.style.top = "0";
+  offscreen.style.left = "-99999px";
+  offscreen.style.width = `${PDF_RENDER_WIDTH}px`;
+  offscreen.style.background = "#ffffff";
+  offscreen.appendChild(clone);
+  document.body.appendChild(offscreen);
+
+  let canvas;
+  try {
+    canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#ffffff", width: PDF_RENDER_WIDTH, windowWidth: PDF_RENDER_WIDTH });
+  } finally {
+    document.body.removeChild(offscreen);
+  }
+
   const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
